@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>Login Sing up Tailwind css</title>
+  <link href="../dist/output.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .content{
+            display: none;
+        }
+        .active{
+            color: black;
+            border-bottom: 1px solid blueviolet;
+        }
+    </style>
+</head>
+<body>
+    <section class="bg-gray-950 h-[100vh] w-[100%] flex justify-center items-center">
+        <div class="main bg-white h-auto transition-all duration-200 w-[20rem] rounded-xl">
+            <div class="box w-[100%] h-[100%] p-3  rounded-xl">
+                <div class="heading p-3 flex justify-evenly border-b">
+                    <button  data-tab="login" class=" tablink hover:bg-[#0102164f] hover:text-sky-100 transition ease-in duration-200 px-3 py-1 rounded"><span class="mr-1"><i class="uil uil-user-circle"></i></span>Login</button>
+                    <button  data-tab="singup" class=" tablink hover:bg-[#0102164f] hover:text-sky-100 transition ease-in duration-200 px-3 py-1 rounded" ><span class="mr-1"><i class="uil uil-keyhole-circle "></i></span>Sing up</button>
+                </div>
+                <div class="content" id="login">
+                    <div class="field mt-3 flex flex-col items-center mb-5 ">
+                        <div class="input">
+                            <label class="block text-[3.4vmin] pt-1 font-[600]" for="name">Username</label>
+                            <input type="text" placeholder="Enter Username..."  class="border px-1 w-[18rem] py-1 text-xl mb-1" id="name">
+                        </div>
+                        <div class="input">
+                            <label class="block text-[3.4vmin] pt-1 font-[600]" for="pass">Password</label>
+                            <input type="password" placeholder="Enter Password..." class="border w-[18rem] py-1 px-1 text-xl mb-3"  id="pass">
+                        </div>
+                    </div>
+                    <div class="forgot flex justify-between px-2">
+                       <div class=" text-center flex alingn-center "> <input type="checkbox" name="" class="cursor-pointer" id="r"><label class="cursor-pointer" for="r">Rember Me</label></div>
+                        <a href="#" class="hover:underline hover:text-[#711baa] text-black-500">Forgot Password?</a>
+                    </div>
+                    <div class="drop-shadow-2xl px-2 btn bg-[#711baa] text-center mt-5 rounded-lg cursor-pointer">
+                        <button class=" text-white text-center p-2 rounded-lg drop-shadow-md items-center "><span class="ml-1 mb-2"><i class="rotate-180 uil uil-sign-in-alt"></i></span>Login</button>
+                    </div>
+                </div>
+                <div class="content transition-all duration-200" id="singup">
+                    <div class="field mt-3 flex flex-col items-center mb-5">
+                        <div class="input">
+                            <label class="block text-[3.4vmin] pt-1 font-[600]" for="name">Username</label>
+                            <input type="text" placeholder="Enter Username..."  class="border px-1 w-[18rem] py-1 text-xl mb-1" id="name">
+                        </div>
+                        <div class="input">
+                            <label class="block text-[3.4vmin] pt-1 font-[600]" for="email">Email</label>
+                            <input type="email" placeholder="Enter Email..."  class="border px-1 w-[18rem] py-1 text-xl mb-1" id="email">
+                        </div>
+                        <div class="input">
+                            <label class="block text-[3.4vmin] pt-1 font-[600]" for="pass">Password</label>
+                            <input type="password" placeholder="Enter Password..." class="border w-[18rem] py-1 px-1 text-xl mb-3"  id="pass">
+                        </div>
+                    </div>
+                    <div class="forgot flex justify-between px-2">
+                       <div class=" text-center flex alingn-center "> <input type="checkbox" name="" class="cursor-pointer" id="r"><label class="cursor-pointer" for="r">Rember Me</label></div>
+                        <a href="#" class="hover:underline hover:text-[#711baa] text-black-500">Login</a>
+                    </div>
+                    <div class="drop-shadow-2xl px-2 btn bg-[#711baa] text-center mt-5 rounded-lg cursor-pointer">
+                        <button class=" text-white text-center p-2 rounded-lg drop-shadow-md"><span><i class="uil uil-sign-in-alt"></i></span>Sing up</button>
+                    </div>
+                </div>
+            </div>
+        </div>      
+    </section>
+
+
+
+
+
+    <script>
+        const btn=document.querySelectorAll('.tablink');
+        for (let i = 0; i < btn.length; i++) {
+            btn[i].addEventListener('click',function(){
+                let tabName=this.dataset.tab;
+                let tabContent=document.getElementById(tabName);
+                let alltabcontent=document.querySelectorAll('.content');
+                for (let j = 0; j < alltabcontent.length; j++) {
+                    alltabcontent[j].style.display = "none";
+                }
+
+                tabContent.style.display="block";
+                this.classList.add('active');
+            });
+        }
+
+    </script>
+
+
+<script>
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    })
+</script>
+    <script>
+        Toast.fire({
+                    icon: 'success',
+                    title: 'I created by tailwind css'
+                })
+    </script>
+</body>
+</html>

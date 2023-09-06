@@ -1,0 +1,399 @@
+<?php
+
+namespace App\Http\Controllers\user;
+
+use App\Models\LandDetail;
+use App\Models\AreaRequired;
+use App\Models\CourseDetail;
+use App\Models\ProgrammeOne;
+use App\Models\ProgrammeTwo;
+use Illuminate\Http\Request;
+use App\Models\PaymentDetail;
+use App\Models\InstituteDetail;
+use App\Http\Controllers\Controller;
+use App\Models\InstituteDetailTieUp;
+use App\Models\InstituteDetailForeign;
+use App\Models\User;
+use Illuminate\Support\Collection;
+use PDF;
+
+class FormController extends Controller
+{
+
+
+    public function PDFView($id)
+    {
+        $data = User::with(['step2', 'step3', 'step4', 'step5', 'step6', 'step7', 'step8', 'step9'])->where('id', $id)->first();
+
+        if (
+            $data->step2->isNotEmpty() || $data->step3->isNotEmpty() || $data->step4->isNotEmpty() ||
+            $data->step5->isNotEmpty() || $data->step6->isNotEmpty() || $data->step7->isNotEmpty() ||
+            $data->step8->isNotEmpty() || $data->step9->isNotEmpty()
+        ) {
+            return view('user.formPDF-view', compact('data'));
+        } else {
+            return redirect()->route('home')->with(bindMsg('Form Not Submitted!', 'error'));
+        }
+    }
+    function PDF($id)
+    {
+        $user = User::with(['step2', 'step3', 'step4', 'step5', 'step6', 'step7', 'step8', 'step9'])->where('id', $id)->first();
+        
+        if (
+            !$data->step2->isNotEmpty() || !$data->step3->isNotEmpty() || !$data->step4->isNotEmpty() ||
+            !$data->step5->isNotEmpty() || !$data->step6->isNotEmpty() || !$data->step7->isNotEmpty() ||
+            !$data->step8->isNotEmpty() || !$data->step9->isNotEmpty()
+        ) {
+            return redirect()->route('home')->with(bindMsg('Form Not Submitted!', 'error')); }
+        
+        if (!$user) {
+            return redirect()->route('home')->with(bindMsg('User not found', 'error'));
+        }
+        $data = [
+            'user' => $user,
+            'step2' => $user->step2,
+            'step3' => $user->step3,
+            'step4' => $user->step4,
+            'step5' => $user->step5,
+            'step6' => $user->step6,
+            'step7' => $user->step7,
+            'step8' => $user->step8,
+            'step9' => $user->step9,
+        ];
+        $pdf = PDF::loadView('user.formPDF', $data);
+        return $pdf->download($user->name . 'ForeignUniveristy.pdf');
+    }
+
+    public function step2(Request $req)
+    {
+        $payment = PaymentDetail::where('user_id', auth()->user()->id)->first();
+        if (!is_null($payment) && $payment->status != 'captured') {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        } elseif (is_null($payment)) {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        }
+
+        if ($req->isMethod('GET')) {
+            $data = InstituteDetail::where('user_id', auth()->user()->id)->first();
+            return view('user.step-2', compact('data'));
+        } elseif ($req->isMethod('POST')) {
+            $req->validate([
+                'first_name' => 'nullable|max:200',
+                'middle_name' => 'nullable|max:200',
+                'last_name' => 'nullable|max:200',
+                'state' => 'nullable|max:200',
+                'district' => 'nullable|max:200',
+                'pincode' => 'nullable|digits:6|numeric',
+                'phone' => 'nullable|max:200',
+                'mobile1' => 'nullable|max:200',
+                'mobile2' => 'nullable|max:200',
+                'email' => 'nullable|max:200',
+                'email2' => 'nullable|max:200',
+            ]);
+            if (checkStep9()) {
+                return back()->with(bindMsg('Form is Already Submitted', 'error'));
+            }
+            $req->merge(['user_id' => auth()->user()->id]);
+            $check = InstituteDetail::where('user_id', $req->user_id)->first();
+            $result = null;
+            if (!is_null($check)) {
+                $result = InstituteDetail::find($check->id)->update($req->all());
+            } else {
+                $result = InstituteDetail::create($req->all());
+            }
+            if ($result) {
+                return redirect(route('step3'))->with(bindMsg('Step 2 Completed Successfully', 'success'));
+            } else {
+                return back()->with(bindMsg('Something Went Wrong', 'error'));
+            }
+        }
+    }
+    public function step3(Request $req)
+    {
+        $payment = PaymentDetail::where('user_id', auth()->user()->id)->first();
+        if (!is_null($payment) && $payment->status != 'captured') {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        } elseif (is_null($payment)) {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        }
+        if ($req->isMethod('GET')) {
+            $data = InstituteDetailTieUp::where('user_id', auth()->user()->id)->first();
+            return view('user.step-3', compact('data'));
+        } elseif ($req->isMethod('POST')) {
+            $req->validate([
+                'description' => 'nullable|max:200',
+                'address' => 'nullable|max:200',
+                'country' => 'nullable|max:200',
+                'state' => 'nullable|max:200',
+                'district' => 'nullable|max:200',
+                'pincode' => 'nullable|digits:6|numeric',
+                'name' => 'nullable|max:200',
+                'address2' => 'nullable|max:200',
+                'country2' => 'nullable|max:200',
+                'state2' => 'nullable|max:200',
+                'district2' => 'nullable|max:200',
+                'pincode2' => 'nullable|digits:6|numeric',
+                'application_id' => 'nullable|max:200'
+            ]);
+            if (checkStep9()) {
+                return back()->with(bindMsg('Form is Already Submitted', 'error'));
+            }
+            $req->merge(['user_id' => auth()->user()->id, 'application_id' => mt_rand(12345, 99999) . date('Ymd')]);
+            $check = InstituteDetailTieUp::where('user_id', $req->user_id)->first();
+            $result = null;
+            if (!is_null($check)) {
+                $result = InstituteDetailTieUp::find($check->id)->update($req->all());
+            } else {
+                $result = InstituteDetailTieUp::create($req->all());
+            }
+            if ($result) {
+                return redirect(route('step4'))->with(bindMsg('Step 3 Completed Successfully', 'success'));
+            } else {
+                return back()->with(bindMsg('Something Went Wrong', 'error'));
+            }
+        }
+    }
+    public function step4(Request $req)
+    {
+        $payment = PaymentDetail::where('user_id', auth()->user()->id)->first();
+        if (!is_null($payment) && $payment->status != 'captured') {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        } elseif (is_null($payment)) {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        }
+        if ($req->isMethod('GET')) {
+            $data = ProgrammeOne::where('user_id', auth()->user()->id)->first();
+            return view('user.step-4', compact('data'));
+        } elseif ($req->isMethod('POST')) {
+            $req->validate([
+                'area_of_land' => 'nullable|max:200',
+                'khesara_no' => 'nullable|max:200',
+                'plot_no' => 'nullable|numeric',
+                'land_suited' => 'nullable|max:200',
+                'register_name' => 'nullable|max:200',
+                'ownership' => 'nullable|max:200',
+                'certificate_issued' => 'nullable|max:200',
+                'land_authority' => 'nullable|max:200',
+                'land_mortgaged' => 'nullable|max:200',
+                'mortgaged_details' => 'nullable|max:200',
+            ]);
+            if (checkStep9()) {
+                return back()->with(bindMsg('Form is Already Submitted', 'error'));
+            }
+            $req->merge(['schools' => isset($req->schools) ? implode('$', $req->schools) : null]);
+            $req->merge(['programme' => isset($req->programme) ? implode('$', $req->programme) : null]);
+            $req->merge(['course' => isset($req->course) ? implode('$', $req->course) : null]);
+            $req->merge(['sanctioned_from' => isset($req->sanctioned_from) ? implode('$', $req->sanctioned_from) : null]);
+            $req->merge(['sanctioned_to' => isset($req->sanctioned_to) ? implode('$', $req->sanctioned_to) : null]);
+            $req->merge(['course_from' => isset($req->course_from) ? implode('$', $req->course_from) : null]);
+            $req->merge(['course_to' => isset($req->course_to) ? implode('$', $req->course_to) : null]);
+            $req->merge(['user_id' => auth()->user()->id]);
+            $check = ProgrammeOne::where('user_id', $req->user_id)->first();
+            $result = null;
+            if (!is_null($check)) {
+                $result = ProgrammeOne::find($check->id)->update($req->all());
+            } else {
+                $result = ProgrammeOne::create($req->all());
+            }
+            if ($result) {
+                return redirect(route('step5'))->with(bindMsg('Step 4 Completed Successfully', 'success'));
+            } else {
+                return back()->with(bindMsg('Something Went Wrong', 'error'));
+            }
+        }
+    }
+    public function step5(Request $req)
+    {
+        $payment = PaymentDetail::where('user_id', auth()->user()->id)->first();
+        if (!is_null($payment) && $payment->status != 'captured') {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        } elseif (is_null($payment)) {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        }
+        if ($req->isMethod('GET')) {
+            $data = LandDetail::where('user_id', auth()->user()->id)->first();
+            return view('user.step-5', compact('data'));
+        } elseif ($req->isMethod('POST')) {
+            $req->validate([
+                'administrative_area' => 'nullable|max:200',
+                'amenities_area' => 'nullable|max:200',
+                'instructional_area' => 'nullable|max:200',
+            ]);
+            if (checkStep9()) {
+                return back()->with(bindMsg('Form is Already Submitted', 'error'));
+            }
+            $req->merge(['user_id' => auth()->user()->id]);
+            $check = LandDetail::where('user_id', $req->user_id)->first();
+            $result = null;
+            if (!is_null($check)) {
+                $result = LandDetail::find($check->id)->update($req->all());
+            } else {
+                $result = LandDetail::create($req->all());
+            }
+            if ($result) {
+                return redirect(route('step6'))->with(bindMsg('Step 5 Completed Successfully', 'success'));
+            } else {
+                return back()->with(bindMsg('Something Went Wrong', 'error'));
+            }
+        }
+    }
+    public function step6(Request $req)
+    {
+        $payment = PaymentDetail::where('user_id', auth()->user()->id)->first();
+        if (!is_null($payment) && $payment->status != 'captured') {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        } elseif (is_null($payment)) {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        }
+        if ($req->isMethod('GET')) {
+            $data = InstituteDetailForeign::where('user_id', auth()->user()->id)->first();
+            return view('user.step-6', compact('data'));
+        } elseif ($req->isMethod('POST')) {
+            $req->validate([
+                'description' => 'nullable|max:200',
+                'address' => 'nullable|max:200',
+                'country' => 'nullable|max:200',
+                'state' => 'nullable|max:200',
+                'district' => 'nullable|max:200',
+                'pincode' => 'nullable|max:200',
+                'name' => 'nullable|max:200',
+                'address2' => 'nullable|max:200',
+                'country2' => 'nullable|max:200',
+                'state2' => 'nullable|max:200',
+                'district2' => 'nullable|max:200',
+                'pincode2' => 'nullable|max:200',
+            ]);
+            if (checkStep9()) {
+                return back()->with(bindMsg('Form is Already Submitted', 'error'));
+            }
+            $req->merge(['user_id' => auth()->user()->id]);
+            $check = InstituteDetailForeign::where('user_id', $req->user_id)->first();
+            $result = null;
+            if (!is_null($check)) {
+                $result = InstituteDetailForeign::find($check->id)->update($req->all());
+            } else {
+                $result = InstituteDetailForeign::create($req->all());
+            }
+            if ($result) {
+                return redirect(route('step7'))->with(bindMsg('Step 6 Completed Successfully', 'success'));
+            } else {
+                return back()->with(bindMsg('Something Went Wrong', 'error'));
+            }
+        }
+    }
+    public function step7(Request $req)
+    {
+        $payment = PaymentDetail::where('user_id', auth()->user()->id)->first();
+        if (!is_null($payment) && $payment->status != 'captured') {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        } elseif (is_null($payment)) {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        }
+        if ($req->isMethod('GET')) {
+            $data = ProgrammeTwo::where('user_id', auth()->user()->id)->first();
+            return view('user.step-7', compact('data'));
+        } elseif ($req->isMethod('POST')) {
+            $req->validate([
+                'area_of_land' => 'nullable|max:200',
+                'state2' => 'nullable|max:200',
+                'district2' => 'nullable|max:200',
+                'ownership' => 'nullable|max:200',
+            ]);
+            $req->merge(['user_id' => auth()->user()->id]);
+            $req->merge(['schools' => isset($req->schools) ? implode('$', $req->schools) : null]);
+            $req->merge(['programme' => isset($req->programme) ? implode('$', $req->programme) : null]);
+            $req->merge(['course' => isset($req->course) ? implode('$', $req->course) : null]);
+            $req->merge(['sanctioned_from' => isset($req->sanctioned_from) ? implode('$', $req->sanctioned_from) : null]);
+            $req->merge(['sanctioned_to' => isset($req->sanctioned_to) ? implode('$', $req->sanctioned_to) : null]);
+            $req->merge(['course_from' => isset($req->course_from) ? implode('$', $req->course_from) : null]);
+            $req->merge(['course_to' => isset($req->course_to) ? implode('$', $req->course_to) : null]);
+            $check = ProgrammeTwo::where('user_id', $req->user_id)->first();
+            $result = null;
+            if (checkStep9()) {
+                return back()->with(bindMsg('Form is Already Submitted', 'error'));
+            }
+            if (!is_null($check)) {
+                $result = ProgrammeTwo::find($check->id)->update($req->all());
+            } else {
+                $result = ProgrammeTwo::create($req->all());
+            }
+            if ($result) {
+                return redirect(route('step8'))->with(bindMsg('Step 7 Completed Successfully', 'success'));
+            } else {
+                return back()->with(bindMsg('Something Went Wrong', 'error'));
+            }
+        }
+    }
+    public function step8(Request $req)
+    {
+        $payment = PaymentDetail::where('user_id', auth()->user()->id)->first();
+        if (!is_null($payment) && $payment->status != 'captured') {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        } elseif (is_null($payment)) {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        }
+        if ($req->isMethod('GET')) {
+            $data = AreaRequired::where('user_id', auth()->user()->id)->first();
+            return view('user.step-8', compact('data'));
+        } elseif ($req->isMethod('POST')) {
+            $req->validate([
+                'administrative_area' => 'nullable|max:200',
+                'amenities_area' => 'nullable|max:200',
+                'instructional_area' => 'nullable|max:200',
+            ]);
+            if (checkStep9()) {
+                return back()->with(bindMsg('Form is Already Submitted', 'error'));
+            }
+            $req->merge(['user_id' => auth()->user()->id]);
+            $check = AreaRequired::where('user_id', $req->user_id)->first();
+            $result = null;
+            if (!is_null($check)) {
+                $result = AreaRequired::find($check->id)->update($req->all());
+            } else {
+                $result = AreaRequired::create($req->all());
+            }
+            if ($result) {
+                return redirect(route('step9'))->with(bindMsg('Step 8 Completed Successfully', 'success'));
+            } else {
+                return back()->with(bindMsg('Something Went Wrong', 'error'));
+            }
+        }
+    }
+    public function step9(Request $req)
+    {
+        $payment = PaymentDetail::where('user_id', auth()->user()->id)->first();
+        if (!is_null($payment) && $payment->status != 'captured') {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        } elseif (is_null($payment)) {
+            return back()->with(bindMsg('Please Complete Payment First', 'error'));
+        }
+        if ($req->isMethod('GET')) {
+            $data = CourseDetail::where('user_id', auth()->user()->id)->first();
+            return view('user.step-9', compact('data'));
+        } elseif ($req->isMethod('POST')) {
+            $req->merge(['user_id' => auth()->user()->id]);
+            $req->merge(['schools' => isset($req->schools) ? implode('$', $req->schools) : null]);
+            $req->merge(['programme' => isset($req->programme) ? implode('$', $req->programme) : null]);
+            $req->merge(['course' => isset($req->course) ? implode('$', $req->course) : null]);
+            $req->merge(['sanctioned_from' => isset($req->sanctioned_from) ? implode('$', $req->sanctioned_from) : null]);
+            $req->merge(['sanctioned_to' => isset($req->sanctioned_to) ? implode('$', $req->sanctioned_to) : null]);
+            $req->merge(['course_from' => isset($req->course_from) ? implode('$', $req->course_from) : null]);
+            $req->merge(['course_to' => isset($req->course_to) ? implode('$', $req->course_to) : null]);
+            if (checkStep9()) {
+                return back()->with(bindMsg('Form is Already Submitted', 'error'));
+            }
+            $check = CourseDetail::where('user_id', $req->user_id)->first();
+            $result = null;
+            if (!is_null($check)) {
+                $result = CourseDetail::find($check->id)->update($req->all());
+            } else {
+                $result = CourseDetail::create($req->all());
+            }
+            if ($result) {
+                return redirect(route('home'))->with(bindMsg('Form Submitted Successfully', 'success'));
+            } else {
+                return back()->with(bindMsg('Something Went Wrong', 'error'));
+            }
+        }
+    }
+}
